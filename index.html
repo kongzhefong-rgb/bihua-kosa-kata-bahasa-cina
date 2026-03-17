@@ -7,10 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <style>
         :root {
-            --primary-color: #4CAF50;
-            --accent-color: #FFEB3B;
-            --bg-color: #E8F5E9;
-            --error-color: #f44336;
+            --primary-color: #4CAF50; /* 森林綠 */
+            --accent-color: #FFEB3B;  /* 活力黃 */
+            --bg-color: #E8F5E9;      /* 淺綠背景 */
         }
         body {
             font-family: "Microsoft YaHei", "SimHei", sans-serif;
@@ -19,93 +18,117 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            color: #333;
         }
+        /* 標題區設計 */
         .app-header {
             background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
             width: 100%;
-            padding: 25px 0;
+            padding: 30px 0;
             text-align: center;
-            border-bottom-left-radius: 40px;
-            border-bottom-right-radius: 40px;
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
+        .app-header h1 { margin: 0; font-size: 2.2rem; letter-spacing: 2px; }
+        
+        /* 核心內容區 */
         .main-card {
             background: white;
             width: 90%;
-            max-width: 650px;
-            margin: -20px 20px 20px 20px;
-            padding: 25px;
-            border-radius: 20px;
+            max-width: 700px;
+            margin: -30px 20px 20px 20px;
+            padding: 30px;
+            border-radius: 25px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
-        .input-section { display: flex; gap: 10px; margin-bottom: 20px; }
+
+        /* 輸入區 */
+        .input-section {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
         input[type="text"] {
             flex: 1;
             border: 3px solid #C8E6C9;
-            border-radius: 12px;
-            padding: 12px;
-            font-size: 1rem;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 1.1rem;
+            outline: none;
         }
+        input:focus { border-color: var(--primary-color); }
         .btn-create {
             background-color: #FF9800;
             color: white;
             border: none;
-            padding: 0 20px;
-            border-radius: 12px;
+            padding: 0 25px;
+            border-radius: 15px;
             font-weight: bold;
             cursor: pointer;
+            transition: transform 0.2s;
         }
+        .btn-create:hover { transform: scale(1.05); }
+
+        /* 字幕按鈕區 */
         #charButtons {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 15px;
             justify-content: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
         .char-bubble {
-            width: 60px;
-            height: 60px;
-            border: 3px solid #FFCC80;
+            width: 65px;
+            height: 65px;
+            border: 4px solid #FFCC80;
             background-color: white;
-            border-radius: 15px;
-            font-size: 26px;
+            border-radius: 50%;
+            font-size: 28px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: all 0.3s;
             box-shadow: 0 4px 0 #FFB74D;
         }
+        .char-bubble:active { transform: translateY(4px); box-shadow: none; }
         .char-bubble.active {
             background-color: var(--primary-color);
             color: white;
             border-color: var(--accent-color);
         }
+
+        /* 練習區畫布 */
         .practice-zone {
             display: none;
             flex-direction: column;
             align-items: center;
-            border: 4px dashed #A5D6A7;
+            border: 5px dashed #A5D6A7;
             border-radius: 20px;
-            padding: 15px;
-            background-color: #fff;
+            padding: 20px;
+            background-color: #FAFAFA;
         }
         #character-target {
-            width: 300px;
-            height: 300px;
+            width: 280px;
+            height: 280px;
+            background-color: white;
             border: 2px solid #333;
+            /* 米字格背景 */
             background-image: 
-                linear-gradient(45deg, transparent 49.5%, #eee 49.5%, #eee 50.5%, transparent 50.5%),
-                linear-gradient(-45deg, transparent 49.5%, #eee 49.5%, #eee 50.5%, transparent 50.5%),
-                linear-gradient(to right, transparent 49.5%, #eee 49.5%, #eee 50.5%, transparent 50.5%),
-                linear-gradient(to bottom, transparent 49.5%, #eee 49.5%, #eee 50.5%, transparent 50.5%);
+                linear-gradient(45deg, transparent 49%, #eee 49%, #eee 51%, transparent 51%),
+                linear-gradient(-45deg, transparent 49%, #eee 49%, #eee 51%, transparent 51%),
+                linear-gradient(to right, transparent 49%, #eee 49%, #eee 51%, transparent 51%),
+                linear-gradient(to bottom, transparent 49%, #eee 49%, #eee 51%, transparent 51%);
         }
         .status-msg {
             margin-top: 15px;
             font-size: 1.2rem;
             color: #2E7D32;
             font-weight: bold;
-            text-align: center;
+            min-height: 1.5em;
         }
     </style>
 </head>
@@ -113,39 +136,33 @@
 
     <div class="app-header">
         <h1>笔画 & 生字练习</h1>
-        <p>听、看、写，轻松掌握生字</p>
+        <p>听一听、看一看、写一写</p>
     </div>
 
     <div class="main-card">
         <div class="input-section">
-            <input type="text" id="charInput" placeholder="请输入生字...">
-            <button class="btn-create" id="generateBtn">生成生字</button>
+            <input type="text" id="charInput" placeholder="输入你想练习的生字...">
+            <button class="btn-create" id="generateBtn">生成按钮</button>
         </div>
+
         <div id="charButtons"></div>
+
         <div class="practice-zone" id="practiceZone">
             <div id="character-target"></div>
-            <div class="status-msg" id="statusMsg">点击生字开始</div>
+            <div class="status-msg" id="statusMsg">准备好了吗？</div>
         </div>
     </div>
 
     <script>
         let writer;
-        let errorCount = 0; // 紀錄錯誤次數
-
-        // 筆畫名稱對照表（簡體）
-        const STROKE_NAMES = {
-            'h': '横', 's': '竖', 'p': '撇', 'n': '捺', 'd': '点', 't': '提',
-            'hz': '横折', 'sz': '竖折', 'sw': '竖弯', 'hg': '横钩', 'sg': '竖钩',
-            'px': '撇点', 'hzt': '横折提', 'hzw': '横折弯', 'hzz': '横折折',
-            'sx': '竖提', 'x': '斜', 'w': '弯', 'wg': '弯钩', 'nx': '捺'
-            // Hanzi Writer 的筆畫類型較細，這裡簡化為常用稱呼
-        };
 
         document.getElementById('generateBtn').addEventListener('click', function() {
             const text = document.getElementById('charInput').value;
             const container = document.getElementById('charButtons');
             container.innerHTML = '';
             document.getElementById('practiceZone').style.display = 'none';
+
+            // 確保只處理簡體中文 (Hanzi Writer 自動處理大部分簡體字庫)
             Array.from(text).forEach(char => {
                 if (char.trim() === '') return;
                 const btn = document.createElement('div');
@@ -156,88 +173,56 @@
             });
         });
 
+        // 自動化流程控制
         async function startAutoFlow(char, btnElement) {
-            errorCount = 0;
+            // 1. 介面更新
             document.querySelectorAll('.char-bubble').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
             document.getElementById('practiceZone').style.display = 'flex';
+            
+            // 2. 初始化畫布 (簡體中文模式)
+            const status = document.getElementById('statusMsg');
             document.getElementById('character-target').innerHTML = '';
             
             writer = HanziWriter.create('character-target', char, {
-                width: 300, height: 300, padding: 10, showOutline: true,
-                strokeColor: '#2E7D32', drawingColor: '#D32F2F', drawingWidth: 15
+                width: 280,
+                height: 280,
+                padding: 10,
+                showOutline: true,
+                strokeColor: '#2E7D32',
+                outlineColor: '#EEEEEE',
+                drawingColor: '#D32F2F', // 孩子練習時的筆畫顏色
+                drawingWidth: 15
             });
 
-            const status = document.getElementById('statusMsg');
-            
-            // 1. 朗讀生字
-            status.textContent = `🔊 朗读：${char}`;
+            // 3. 標準華文讀音 (TTS)
+            status.textContent = "🔊 正在朗读...";
             await speak(char);
 
-            // 2. 動畫演示 + 筆畫配音
-            status.textContent = "👀 观察笔顺与名称...";
-            const charData = await HanziWriter.loadCharacterData(char);
-            for (let i = 0; i < charData.strokes.length; i++) {
-                // 這裡簡化判斷，讓它在每筆畫開始時讀出
-                await speakStroke(i, charData);
-                await new Promise(resolve => writer.animateStroke(i, { onComplete: resolve }));
-            }
+            // 4. 自動寫筆畫
+            status.textContent = "👀 仔细看笔顺...";
+            await new Promise(resolve => {
+                writer.animateCharacter({ onComplete: resolve });
+            });
 
-            // 3. 進入練習模式
-            status.textContent = "✍️ 换你试试！写错会有提示哦";
-            startQuiz(charData);
-        }
-
-        function startQuiz(charData) {
+            // 5. 自動進入練習模式
+            status.textContent = "✍️ 现在輪到你写写看！";
             writer.quiz({
-                onCorrectStroke: function(strokeData) {
-                    errorCount = 0; // 答對了，重置錯誤計數
-                    const name = getStrokeName(strokeData.strokeNum, charData);
-                    document.getElementById('statusMsg').textContent = `✅ 對了！這是「${name}」`;
-                    speak(name);
-                },
-                onMistake: function(strokeData) {
-                    errorCount++;
-                    if (errorCount >= 2) {
-                        const nextName = getStrokeName(strokeData.strokeNum, charData);
-                        document.getElementById('statusMsg').textContent = `💡 提示：下一笔是「${nextName}」`;
-                        speak(`提醒你，下一笔是：${nextName}`);
-                        writer.highlightStroke(strokeData.strokeNum); // 高亮顯示正確的一筆
-                    } else {
-                        document.getElementById('statusMsg').textContent = "❌ 不對喔，再試一次！";
-                    }
-                },
-                onComplete: function() {
-                    document.getElementById('statusMsg').textContent = "🎉 太棒了！全部寫對了！";
-                    speak("太棒了，全部写对了");
+                onComplete: () => {
+                    status.textContent = "🌟 太棒了！你學會了！";
                 }
             });
         }
 
-        // 取得筆畫名稱
-        function getStrokeName(index, charData) {
-            // 從數據中提取筆畫類型，並轉換為中文名稱
-            const type = charData.strokes[index]; 
-            // 註：這是一個簡化的邏輯，實際筆畫名稱可根據需要擴充
-            return "笔画"; // 由於 TTS 會根據筆畫形狀自動識別較難，這裡優先使用引導式
-        }
-
-        // 語音朗讀
+        // 語音朗讀函式
         function speak(text) {
             return new Promise((resolve) => {
-                window.speechSynthesis.cancel(); // 停止之前的語音
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-CN';
-                utterance.rate = 0.8;
+                utterance.lang = 'zh-CN'; // 設定為簡體中文/標準華語語音
+                utterance.rate = 0.8;    // 稍微慢一點點，讓孩子聽清楚
                 utterance.onend = resolve;
                 window.speechSynthesis.speak(utterance);
             });
-        }
-
-        async function speakStroke(index, charData) {
-            // 模擬筆畫名稱，實際應用中可擴展更精確的筆畫資料庫
-            // 這裡我們先用「第 X 笔」或預設名稱
-            return speak(`第 ${index + 1} 笔`);
         }
     </script>
 </body>
