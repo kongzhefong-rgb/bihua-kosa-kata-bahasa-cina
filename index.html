@@ -35,6 +35,7 @@
             align-items: center;
             z-index: 50;
             flex-shrink: 0;
+            position: relative;
         }
 
         .app-body {
@@ -134,7 +135,7 @@
             color: var(--dark-green);
         }
 
-        /* 书写区下方选字小框 */
+        /* 选字小卡片 */
         .char-box {
             width: 48px;
             height: 48px;
@@ -146,35 +147,21 @@
             align-items: center;
             justify-content: center;
             background: #fff;
+            cursor: pointer;
         }
         .char-box.active {
             border-color: #E65100;
             background: #FFF3E0;
         }
 
-        /* 顶部练习模式下的生字独立展示盒 */
-        .top-char-display-item {
-            width: 42px;
-            height: 42px;
-            background: #fff;
-            border: 2px solid #FFCC80;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #333;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
+        /* 顶部逐字卡片容器 */
         .active-word-container {
             display: none;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 8px;
-            padding: 10px;
-            background: white;
+            gap: 10px;
+            padding: 12px;
+            background: #fff;
             border-bottom: 1px solid #f0f0f0;
             width: 100%;
         }
@@ -205,6 +192,17 @@
             z-index: 100;
         }
         .restore-btn:hover { color: var(--primary-green); background: rgba(0,0,0,0.1); }
+
+        /* 底部署名样式 */
+        .footer {
+            text-align: center;
+            padding: 6px 0;
+            font-size: 10px;
+            color: #999;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 <body id="appBody">
@@ -215,43 +213,43 @@
     </div>
 
     <div class="app-body">
-        <!-- 左侧：文件夹导航 -->
+        <!-- 左侧：文件夹 -->
         <div id="sidebar" class="left-sidebar no-scrollbar"></div>
 
-        <!-- 主内容区 -->
+        <!-- 主练习区 -->
         <div class="main-content no-scrollbar" id="mainContent">
             
-            <!-- 恢复显示的小箭头 (书写模式显示在左上角) -->
+            <!-- 恢复箭头 -->
             <div onclick="toggleCompactMode(false)" class="restore-btn hidden" id="restoreHint">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                     <path d="M7 14l5-5 5 5H7z"/>
                 </svg>
             </div>
 
-            <!-- 非书写模式：上方工具栏 -->
+            <!-- 非书写模式：输入与词库 -->
             <div class="p-3 space-y-4 hide-on-write">
                 <div class="flex gap-2">
-                    <input type="text" id="manualInput" placeholder="输入生字或词组练习..." 
+                    <input type="text" id="manualInput" placeholder="手动输入生字或词组练习..." 
                         class="flex-1 px-3 py-2 border rounded-xl text-sm outline-none focus:border-green-400 shadow-sm">
                     <button onclick="handleManual()" class="bg-orange-500 text-white text-sm px-5 rounded-xl font-bold shadow-sm">开始</button>
                 </div>
 
                 <div id="wordUnitContainer" class="flex flex-wrap gap-2"></div>
-                <div id="charButtons" class="flex flex-wrap gap-2 justify-start p-2 bg-white/50 rounded-xl border-t border-dashed"></div>
+                <div id="charButtons" class="flex flex-wrap gap-2 justify-center p-2 bg-white/50 rounded-xl border-t border-dashed"></div>
             </div>
 
-            <!-- 书写模式：顶部逐字展示容器 -->
+            <!-- 书写模式：顶部逐字卡片展示 -->
             <div id="activeWordBox" class="active-word-container">
-                <!-- 动态生成独立字卡 -->
+                <!-- 这里会动态生成可点击的字卡 -->
             </div>
 
-            <!-- 书写/练习主区 (恢复居中排列) -->
+            <!-- 练习主区 (居中) -->
             <div id="practiceArea" class="flex-1 flex flex-col items-center justify-center p-4 hidden">
                 
                 <div id="target" class="hanzi-grid shadow-lg rounded-xl mb-6"></div>
                 
                 <div class="w-full text-center">
-                    <div id="statusText" class="font-bold text-sm text-green-700 mb-4">请观察笔画顺序</div>
+                    <div id="statusText" class="font-bold text-sm text-green-700 mb-4 text-center">请观察笔画演示</div>
                     
                     <div class="flex justify-center gap-4">
                         <button onclick="replayAnimation()" class="bg-blue-500 text-white px-7 py-3 rounded-2xl font-bold text-sm shadow-md flex items-center gap-2 active:scale-95 transition-all">
@@ -266,7 +264,12 @@
         </div>
     </div>
 
-    <!-- 系统设置弹窗 -->
+    <!-- 底部署名 -->
+    <div class="footer">
+        zfkong · 趣学
+    </div>
+
+    <!-- 系统设置 -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col">
             <div class="bg-gray-800 p-4 text-white flex justify-between items-center rounded-t-3xl">
@@ -275,23 +278,23 @@
             </div>
             <div class="p-6 space-y-6">
                 <div>
-                    <label class="block text-gray-600 font-bold mb-3 text-xs">笔顺演示速度 (1.0x 默认)</label>
+                    <label class="block text-gray-600 font-bold mb-3 text-xs">演示速度 (1.0x 默认)</label>
                     <div class="flex items-center gap-3">
                         <input type="range" id="speedSlider" min="0.2" max="2.0" step="0.2" value="1.0" oninput="updateSpeed(this.value)" class="flex-1 accent-green-600">
                         <span id="speedVal" class="text-green-700 font-bold w-10 text-xs text-center">1.0x</span>
                     </div>
                 </div>
                 <div class="space-y-3">
-                    <h3 class="font-bold text-gray-500 text-xs">文件夹分类管理</h3>
+                    <h3 class="font-bold text-gray-500 text-xs">文件夹分类</h3>
                     <div class="flex gap-2">
-                        <input type="text" id="newFolderName" placeholder="名称..." class="flex-1 border p-2 rounded-lg text-xs">
+                        <input type="text" id="newFolderName" placeholder="名称" class="flex-1 border p-2 rounded-lg text-xs">
                         <button onclick="addFolder()" class="bg-green-600 text-white px-3 rounded-lg text-xs font-bold">增加</button>
                     </div>
                     <div id="manageList" class="space-y-2 max-h-40 overflow-y-auto no-scrollbar"></div>
                 </div>
             </div>
             <div class="p-4 border-t text-center">
-                <button onclick="closeSettings()" class="bg-gray-100 px-8 py-2 rounded-xl font-bold text-xs">保存退出</button>
+                <button onclick="closeSettings()" class="bg-gray-100 px-8 py-2 rounded-xl font-bold text-xs">完成</button>
             </div>
         </div>
     </div>
@@ -310,7 +313,7 @@
         };
 
         window.onload = () => {
-            const saved = localStorage.getItem('hanzi_mobile_v5');
+            const saved = localStorage.getItem('hanzi_mobile_final');
             if (saved) appData = JSON.parse(saved);
             renderSidebar();
         };
@@ -351,7 +354,6 @@
         function handleManual() {
             const val = document.getElementById('manualInput').value.trim();
             if(!val) return;
-            // 清理文件夹选中状态
             document.querySelectorAll('.folder-dot').forEach(b => b.classList.remove('active'));
             document.getElementById('wordUnitContainer').innerHTML = '';
             selectWord(val);
@@ -369,8 +371,7 @@
                 btn.className = "char-box shadow-sm";
                 btn.textContent = char;
                 btn.onclick = () => {
-                    document.querySelectorAll('.char-box').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+                    updateActiveCharInUI(char);
                     speak(char);
                     toggleCompactMode(true, currentWordString);
                     initWriter(char);
@@ -379,6 +380,17 @@
             });
             
             if(chars.length > 0) setTimeout(() => container.firstChild.click(), 100);
+        }
+
+        function updateActiveCharInUI(char) {
+            document.querySelectorAll('.char-box').forEach(b => {
+                if(b.textContent === char) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            document.querySelectorAll('.top-char-card').forEach(b => {
+                if(b.textContent === char) b.classList.add('active');
+                else b.classList.remove('active');
+            });
         }
 
         function toggleCompactMode(isCompact, fullWord = '') {
@@ -390,13 +402,17 @@
                 body.classList.add('compact-view');
                 restoreHint.classList.remove('hidden');
                 
-                // 清空并生成顶部独立字卡
                 activeWordBox.innerHTML = '';
                 Array.from(fullWord).forEach(char => {
                     if(/\p{Unified_Ideograph}/u.test(char)) {
                         const item = document.createElement('div');
-                        item.className = 'top-char-display-item';
+                        item.className = 'char-box shadow-sm top-char-card';
                         item.textContent = char;
+                        item.onclick = () => {
+                            updateActiveCharInUI(char);
+                            speak(char);
+                            initWriter(char);
+                        };
                         activeWordBox.appendChild(item);
                     }
                 });
@@ -436,6 +452,7 @@
                 delayBetweenStrokes: 1000 / currentSpeed
             });
 
+            updateActiveCharInUI(char);
             replayAnimation();
         }
 
@@ -497,7 +514,7 @@
 
         window.closeSettings = () => {
             document.getElementById('settingsModal').classList.add('hidden');
-            localStorage.setItem('hanzi_mobile_v5', JSON.stringify(appData));
+            localStorage.setItem('hanzi_mobile_final', JSON.stringify(appData));
             renderSidebar();
         };
 
@@ -513,7 +530,7 @@
                         <button onclick="deleteFolder('${f.id}')" class="text-red-500">删除</button>
                     </div>
                     <div class="flex gap-1 mb-1">
-                        <input type="text" id="addW-${f.id}" placeholder="加字词" class="border p-1 rounded flex-1 text-[10px]">
+                        <input type="text" id="addW-${f.id}" placeholder="词词" class="border p-1 rounded flex-1 text-[10px]">
                         <button onclick="addWordToFolder('${f.id}')" class="bg-blue-500 text-white px-2 rounded">加</button>
                     </div>
                     <div class="text-gray-400 truncate">${f.words.join(', ')}</div>
