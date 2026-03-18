@@ -152,7 +152,7 @@
             </button>
         </div>
 
-        <!-- 悬浮圆圈字卡 -->
+        <!-- 悬浮选中的字 - 初始隐藏，加载后显现 -->
         <div class="floating-char-wrapper">
             <div id="floatChar" class="floating-circle">?</div>
         </div>
@@ -200,6 +200,12 @@
             </div>
             
             <div class="p-8 overflow-y-auto no-scrollbar space-y-8 flex-1">
+                <section id="dbStatusSection" class="hidden">
+                    <div class="p-3 bg-yellow-50 text-yellow-800 rounded-xl text-xs border border-yellow-200">
+                        ⚠️ 运行在本地模式（GitHub）。数据将保存在当前浏览器，无法跨设备同步。
+                    </div>
+                </section>
+
                 <section>
                     <div class="flex justify-between items-center mb-4">
                         <label class="font-bold text-gray-700">演示速度 (已调快至 0.6x)：</label>
@@ -225,47 +231,139 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // 动态加载 Firebase 以防 GitHub 环境报错
+        let db = null;
+        let auth = null;
+        let localData = { folders: [] };
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hanzi-step-by-step';
+        const isCanvas = typeof __firebase_config !== 'undefined';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hanzi-github-fallback';
 
-        let currentUser = null;
+        // 初始化函数
+        async function startApp() {
+            if (isCanvas) {
+                try {
+                    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                    const { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                    const { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, arrayUnion, arrayRemove } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            const folderRef = collection(db, 'artifacts', appId, 'users', user.uid, 'folders');
+                            onSnapshot(folderRef, (snapshot) => {
+                                const folders = [];
+                                snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
+                                updateUI(folders);
+                            });
+                        } else {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                signInAnonymously(auth);
+                            }
+                        }
+                    });
+
+                    // 绑定到 window 供 HTML 按钮调用
+                    window.addFolder = async () => {
+                        const name = document.getElementById('newFolderName').value.trim();
+                        if (!name) return;
+                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', name), { name, words: [] });
+                        document.getElementById('newFolderName').value = '';
+                    };
+                    window.deleteFolder = async (id) => {
+                        if (confirm("确定删除吗？")) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id));
+                    };
+                    window.addWordToFolder = async (id) => {
+                        const input = document.getElementById(`addWord-${id}`);
+                        const chars = Array.from(input.value.trim()).filter(c => /\p{Unified_Ideograph}/u.test(c));
+                        for (let char of chars) {
+                            await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id), { words: arrayUnion(char) });
+                        }
+                        input.value = '';
+                    };
+                    window.removeWord = async (id, word) => {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id), { words: arrayRemove(word) });
+                    };
+
+                } catch (e) {
+                    console.warn("Firebase init failed, switching to local mode.");
+                    initLocalMode();
+                }
+            } else {
+                initLocalMode();
+            }
+        }
+
+        // 本地模式：使用 LocalStorage 保存数据（GitHub 专用）
+        function initLocalMode() {
+            document.getElementById('dbStatusSection').classList.remove('hidden');
+            const saved = localStorage.getItem('hanzi_local_data');
+            if (saved) localData = JSON.parse(saved);
+
+            const save = () => {
+                localStorage.setItem('hanzi_local_data', JSON.stringify(localData));
+                updateUI(localData.folders);
+            };
+
+            window.addFolder = () => {
+                const name = document.getElementById('newFolderName').value.trim();
+                if (!name) return;
+                localData.folders.push({ id: name, name, words: [] });
+                document.getElementById('newFolderName').value = '';
+                save();
+            };
+            window.deleteFolder = (id) => {
+                if (confirm("确定删除吗？")) {
+                    localData.folders = localData.folders.filter(f => f.id !== id);
+                    save();
+                }
+            };
+            window.addWordToFolder = (id) => {
+                const input = document.getElementById(`addWord-${id}`);
+                const folder = localData.folders.find(f => f.id === id);
+                const chars = Array.from(input.value.trim()).filter(c => /\p{Unified_Ideograph}/u.test(c));
+                chars.forEach(c => { if(!folder.words.includes(c)) folder.words.push(c); });
+                input.value = '';
+                save();
+            };
+            window.removeWord = (id, word) => {
+                const folder = localData.folders.find(f => f.id === id);
+                folder.words = folder.words.filter(w => w !== word);
+                save();
+            };
+
+            updateUI(localData.folders);
+        }
+
+        function updateUI(folders) {
+            renderMainFolders(folders);
+            renderSettingsFolders(folders);
+        }
+
+        // --- 核心逻辑 ---
         let writer = null;
         let currentChar = '';
-        let currentSpeed = 0.6; // 调快了初始默认速度
+        let currentSpeed = 0.6;
         let activeFolderId = null;
         let animToken = 0;
 
         window.openSettings = () => {
-            if (prompt("请输入管理员密码：") === "0925") {
+            const pass = prompt("请输入管理员密码：");
+            if (pass === "0925") {
                 document.getElementById('settingsModal').classList.remove('hidden');
                 document.getElementById('settingsModal').classList.add('flex');
-            } else { alert("密码错误！"); }
+            } else if (pass !== null) { alert("密码错误！"); }
         };
         window.closeSettings = () => {
             document.getElementById('settingsModal').classList.add('hidden');
             document.getElementById('settingsModal').classList.remove('flex');
         };
-
-        // Firebase 监听
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                const folderRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'folders');
-                onSnapshot(folderRef, (snapshot) => {
-                    const folders = [];
-                    snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
-                    renderMainFolders(folders);
-                    renderSettingsFolders(folders);
-                });
-            } else { signInAnonymously(auth); }
-        });
 
         function renderMainFolders(folders) {
             const tabs = document.getElementById('folderTabs');
@@ -290,37 +388,10 @@
                 const b = document.createElement('button');
                 b.className = 'w-10 h-10 bg-white border border-green-100 rounded-lg font-bold text-green-900 shadow-sm flex items-center justify-center hover:border-green-500 active:scale-90';
                 b.textContent = w;
-                b.onclick = () => loadHanzi(w);
+                b.onclick = () => window.loadHanzi(w);
                 grid.appendChild(b);
             });
         }
-
-        // 管理逻辑
-        window.addFolder = async () => {
-            const name = document.getElementById('newFolderName').value.trim();
-            if (!name) return;
-            await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', name), { name, words: [] });
-            document.getElementById('newFolderName').value = '';
-        };
-
-        window.deleteFolder = async (id) => {
-            if (confirm("确定删除吗？")) await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', id));
-        };
-
-        window.addWordToFolder = async (id) => {
-            const input = document.getElementById(`addWord-${id}`);
-            const text = input.value.trim();
-            if (!text) return;
-            const chars = Array.from(text).filter(c => /\p{Unified_Ideograph}/u.test(c));
-            for (let char of chars) {
-                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', id), { words: arrayUnion(char) });
-            }
-            input.value = '';
-        };
-
-        window.removeWord = async (id, word) => {
-            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', id), { words: arrayRemove(word) });
-        };
 
         function renderSettingsFolders(folders) {
             const list = document.getElementById('folderManageList');
@@ -345,7 +416,7 @@
             });
         }
 
-        // 业务流程
+        // 按钮点击逻辑
         document.getElementById('startBtn').onclick = () => {
             const val = document.getElementById('manualInput').value.trim();
             if (!val) return;
@@ -360,7 +431,7 @@
                 btn.onclick = () => {
                     document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    loadHanzi(char);
+                    window.loadHanzi(char);
                 };
                 list.appendChild(btn);
                 if(index === 0) btn.click();
@@ -374,7 +445,6 @@
 
         window.loadHanzi = async (char) => {
             currentChar = char;
-            
             const float = document.getElementById('floatChar');
             float.textContent = char;
             float.classList.remove('visible');
@@ -384,23 +454,22 @@
             document.getElementById('practiceSection').classList.remove('hidden');
             document.getElementById('target').innerHTML = '';
             
-            // 关键：showCharacter 设为 false，防止一开始就全变色
             writer = HanziWriter.create('target', char, {
                 width: document.getElementById('target').offsetWidth,
                 height: document.getElementById('target').offsetWidth,
                 padding: 30,
-                showOutline: true,        // 显示灰色底图
-                showCharacter: false,      // 关键：不直接显示全色的字
-                outlineColor: '#EEEEEE',   // 底图颜色
-                strokeColor: '#2E7D32',    // 演示笔画颜色
-                drawingColor: '#2E7D32',   // 写对后的颜色
+                showOutline: true,
+                showCharacter: false,
+                outlineColor: '#EEEEEE',
+                strokeColor: '#2E7D32',
+                drawingColor: '#2E7D32',
                 drawingWidth: 15,
                 strokeAnimationSpeed: currentSpeed,
                 delayBetweenStrokes: 1000 / currentSpeed
             });
 
-            await replayAnimation();
-            startQuiz();
+            await window.replayAnimation();
+            window.startQuiz();
         };
 
         window.replayAnimation = async () => {
@@ -412,7 +481,6 @@
             updateStatus("👀 正在演示笔顺...", "text-blue-600");
             document.getElementById('strokeText').textContent = "观察中";
             
-            // 使用 animateCharacter，它会自动逐笔绘制并保留在屏幕上
             await writer.animateCharacter({
                 onComplete: () => {
                     if (myToken === animToken) {
@@ -427,20 +495,14 @@
             if (!writer) return;
             writer.cancelQuiz();
             animToken++;
-            
-            // 练习开始前先隐藏演示的笔画，只留底图
             writer.hideCharacter();
             
             updateStatus("✍️ 请按底图顺序书写", "text-orange-600");
             document.getElementById('strokeText').textContent = "请书写";
             
             writer.quiz({
-                onCorrectStroke: () => {
-                    updateStatus("✅ 正确！接着写...", "text-green-600");
-                },
-                onMistake: () => {
-                    updateStatus("❌ 笔顺不对，再试一次", "text-red-500");
-                },
+                onCorrectStroke: () => { updateStatus("✅ 正确！接着写...", "text-green-600"); },
+                onMistake: () => { updateStatus("❌ 笔顺不对，再试一次", "text-red-500"); },
                 onComplete: () => {
                     updateStatus("🌟 太棒了！写完了！", "text-blue-700");
                     document.getElementById('strokeText').textContent = "完成";
@@ -453,6 +515,9 @@
             el.textContent = msg;
             el.className = `font-bold text-lg ${color}`;
         }
+
+        // 启动应用
+        startApp();
     </script>
 </body>
 </html>
