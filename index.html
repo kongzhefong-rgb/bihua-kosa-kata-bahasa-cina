@@ -49,7 +49,7 @@
             z-index: 10;
         }
 
-        /* 悬浮选中的字 - 初始隐藏，加载后显现 */
+        /* 悬浮选中的字 */
         .floating-char-wrapper {
             display: flex;
             justify-content: center;
@@ -64,7 +64,7 @@
             width: 90px;
             height: 90px;
             background: white;
-            border: 4px solid #FFD54F; /* 亮黄色边框 */
+            border: 4px solid #FFD54F;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -100,7 +100,6 @@
             margin: 20px auto;
         }
 
-        /* 辅助中心虚线 */
         .hanzi-grid::after {
             content: '';
             position: absolute;
@@ -137,7 +136,7 @@
         <h1 class="text-4xl font-bold mb-2">笔画 & 生字练习</h1>
         <p class="opacity-90">看一看，写一写，循序渐进</p>
         
-        <button onclick="openSettings()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-all text-white text-sm">
+        <button id="settingsToggle" onclick="window.openSettings()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-all text-white text-sm">
             ⚙️ 设置
         </button>
     </div>
@@ -147,28 +146,26 @@
         <div class="flex gap-3 mb-12">
             <input type="text" id="manualInput" placeholder="输入生字或词语..." 
                 class="flex-1 px-5 py-3 border-2 border-green-100 rounded-2xl outline-none focus:border-green-500 text-xl font-bold transition-all shadow-inner">
-            <button id="startBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 rounded-2xl shadow-md active:scale-95 transition-all">
+            <button id="startBtn" onclick="window.generateCards()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 rounded-2xl shadow-md active:scale-95 transition-all">
                 生成字卡
             </button>
         </div>
 
-        <!-- 悬浮选中的字 - 初始隐藏，加载后显现 -->
+        <!-- 悬浮圆圈字卡 -->
         <div class="floating-char-wrapper">
             <div id="floatChar" class="floating-circle">?</div>
         </div>
 
-        <!-- 生成出的待选字卡 -->
-        <div id="selectionArea" class="flex flex-wrap gap-2 justify-center mb-10 min-h-[50px]">
-            <!-- 动态生成按钮 -->
-        </div>
+        <!-- 待选字卡列表 -->
+        <div id="selectionArea" class="flex flex-wrap gap-2 justify-center mb-10 min-h-[50px]"></div>
 
-        <!-- 底部的文件夹分类 -->
+        <!-- 文件夹分类列表 -->
         <div class="space-y-4 mb-8 border-t border-dashed border-gray-100 pt-6">
             <div id="folderTabs" class="flex flex-wrap gap-2 justify-center"></div>
             <div id="folderWords" class="flex flex-wrap gap-2 justify-center min-h-[40px]"></div>
         </div>
 
-        <!-- 核心练习/演示区域 -->
+        <!-- 核心练习/演示区 -->
         <div id="practiceSection" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div id="target" class="hanzi-grid w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-2xl shadow-xl"></div>
             
@@ -180,10 +177,10 @@
                 </div>
 
                 <div class="flex justify-center gap-6">
-                    <button onclick="replayAnimation()" class="bg-blue-500 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-2">
+                    <button onclick="window.replayAnimation()" class="bg-blue-500 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-2">
                         <span>👁️</span> 重看演示
                     </button>
-                    <button onclick="startQuiz()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-green-700 active:scale-95 transition-all flex items-center gap-2">
+                    <button onclick="window.startQuiz()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-green-700 active:scale-95 transition-all flex items-center gap-2">
                         <span>✍️</span> 重新练习
                     </button>
                 </div>
@@ -191,168 +188,59 @@
         </div>
     </div>
 
-    <!-- 后台设置弹窗 -->
+    <!-- 管理后台弹窗 -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             <div class="bg-green-800 p-6 text-white flex justify-between items-center">
                 <h2 class="text-xl font-bold">⚙️ 管理后台</h2>
-                <button onclick="closeSettings()" class="text-3xl">✕</button>
+                <button onclick="window.closeSettings()" class="text-3xl">✕</button>
             </div>
             
             <div class="p-8 overflow-y-auto no-scrollbar space-y-8 flex-1">
                 <section id="dbStatusSection" class="hidden">
                     <div class="p-3 bg-yellow-50 text-yellow-800 rounded-xl text-xs border border-yellow-200">
-                        ⚠️ 运行在本地模式（GitHub）。数据将保存在当前浏览器，无法跨设备同步。
+                        ⚠️ 本地模式。数据保存在当前浏览器，GitHub 运行无法跨设备同步。
                     </div>
                 </section>
 
                 <section>
                     <div class="flex justify-between items-center mb-4">
-                        <label class="font-bold text-gray-700">演示速度 (已调快至 0.6x)：</label>
+                        <label class="font-bold text-gray-700">演示速度 (当前: 0.6x)：</label>
                         <span id="speedVal" class="bg-green-100 text-green-700 px-4 py-1 rounded-full font-bold">0.6x</span>
                     </div>
-                    <input type="range" id="speedSlider" min="0.1" max="1.5" step="0.1" value="0.6" class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <input type="range" id="speedSlider" min="0.1" max="1.5" step="0.1" value="0.6" oninput="window.updateSpeed(this.value)" class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                 </section>
 
                 <section class="border-t pt-6 space-y-4">
                     <h3 class="font-bold text-gray-800">📁 词库管理</h3>
                     <div class="flex gap-2">
                         <input type="text" id="newFolderName" placeholder="新文件夹..." class="flex-1 border p-3 rounded-xl outline-none focus:border-green-500">
-                        <button onclick="addFolder()" class="bg-green-600 text-white px-6 rounded-xl font-bold">新建</button>
+                        <button onclick="window.addFolder()" class="bg-green-600 text-white px-6 rounded-xl font-bold">新建</button>
                     </div>
                     <div id="folderManageList" class="space-y-4"></div>
                 </section>
             </div>
             
             <div class="p-6 border-t bg-gray-50 flex justify-end">
-                <button onclick="closeSettings()" class="bg-gray-800 text-white px-10 py-3 rounded-2xl font-bold">保存并完成</button>
+                <button onclick="window.closeSettings()" class="bg-gray-800 text-white px-10 py-3 rounded-2xl font-bold">保存并完成</button>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // 动态加载 Firebase 以防 GitHub 环境报错
         let db = null;
         let auth = null;
         let localData = { folders: [] };
-
-        const isCanvas = typeof __firebase_config !== 'undefined';
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hanzi-github-fallback';
-
-        // 初始化函数
-        async function startApp() {
-            if (isCanvas) {
-                try {
-                    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
-                    const { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
-                    const { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, arrayUnion, arrayRemove } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    const app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-
-                    onAuthStateChanged(auth, (user) => {
-                        if (user) {
-                            const folderRef = collection(db, 'artifacts', appId, 'users', user.uid, 'folders');
-                            onSnapshot(folderRef, (snapshot) => {
-                                const folders = [];
-                                snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
-                                updateUI(folders);
-                            });
-                        } else {
-                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                signInWithCustomToken(auth, __initial_auth_token);
-                            } else {
-                                signInAnonymously(auth);
-                            }
-                        }
-                    });
-
-                    // 绑定到 window 供 HTML 按钮调用
-                    window.addFolder = async () => {
-                        const name = document.getElementById('newFolderName').value.trim();
-                        if (!name) return;
-                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', name), { name, words: [] });
-                        document.getElementById('newFolderName').value = '';
-                    };
-                    window.deleteFolder = async (id) => {
-                        if (confirm("确定删除吗？")) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id));
-                    };
-                    window.addWordToFolder = async (id) => {
-                        const input = document.getElementById(`addWord-${id}`);
-                        const chars = Array.from(input.value.trim()).filter(c => /\p{Unified_Ideograph}/u.test(c));
-                        for (let char of chars) {
-                            await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id), { words: arrayUnion(char) });
-                        }
-                        input.value = '';
-                    };
-                    window.removeWord = async (id, word) => {
-                        await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id), { words: arrayRemove(word) });
-                    };
-
-                } catch (e) {
-                    console.warn("Firebase init failed, switching to local mode.");
-                    initLocalMode();
-                }
-            } else {
-                initLocalMode();
-            }
-        }
-
-        // 本地模式：使用 LocalStorage 保存数据（GitHub 专用）
-        function initLocalMode() {
-            document.getElementById('dbStatusSection').classList.remove('hidden');
-            const saved = localStorage.getItem('hanzi_local_data');
-            if (saved) localData = JSON.parse(saved);
-
-            const save = () => {
-                localStorage.setItem('hanzi_local_data', JSON.stringify(localData));
-                updateUI(localData.folders);
-            };
-
-            window.addFolder = () => {
-                const name = document.getElementById('newFolderName').value.trim();
-                if (!name) return;
-                localData.folders.push({ id: name, name, words: [] });
-                document.getElementById('newFolderName').value = '';
-                save();
-            };
-            window.deleteFolder = (id) => {
-                if (confirm("确定删除吗？")) {
-                    localData.folders = localData.folders.filter(f => f.id !== id);
-                    save();
-                }
-            };
-            window.addWordToFolder = (id) => {
-                const input = document.getElementById(`addWord-${id}`);
-                const folder = localData.folders.find(f => f.id === id);
-                const chars = Array.from(input.value.trim()).filter(c => /\p{Unified_Ideograph}/u.test(c));
-                chars.forEach(c => { if(!folder.words.includes(c)) folder.words.push(c); });
-                input.value = '';
-                save();
-            };
-            window.removeWord = (id, word) => {
-                const folder = localData.folders.find(f => f.id === id);
-                folder.words = folder.words.filter(w => w !== word);
-                save();
-            };
-
-            updateUI(localData.folders);
-        }
-
-        function updateUI(folders) {
-            renderMainFolders(folders);
-            renderSettingsFolders(folders);
-        }
-
-        // --- 核心逻辑 ---
         let writer = null;
         let currentChar = '';
         let currentSpeed = 0.6;
         let activeFolderId = null;
         let animToken = 0;
 
+        const isCanvas = typeof __firebase_config !== 'undefined';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hanzi-final-app';
+
+        // --- 全局函数绑定 (解决 GitHub 环境 onclick 失效问题) ---
         window.openSettings = () => {
             const pass = prompt("请输入管理员密码：");
             if (pass === "0925") {
@@ -360,64 +248,18 @@
                 document.getElementById('settingsModal').classList.add('flex');
             } else if (pass !== null) { alert("密码错误！"); }
         };
+
         window.closeSettings = () => {
             document.getElementById('settingsModal').classList.add('hidden');
             document.getElementById('settingsModal').classList.remove('flex');
         };
 
-        function renderMainFolders(folders) {
-            const tabs = document.getElementById('folderTabs');
-            tabs.innerHTML = '';
-            folders.forEach(f => {
-                const b = document.createElement('button');
-                b.className = `border-2 px-4 py-1 rounded-full font-bold text-sm transition-all ${activeFolderId === f.id ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-800 border-green-100'}`;
-                b.textContent = f.name;
-                b.onclick = () => {
-                    activeFolderId = f.id;
-                    renderMainWords(f.words || []);
-                    renderMainFolders(folders);
-                };
-                tabs.appendChild(b);
-            });
-        }
+        window.updateSpeed = (val) => {
+            currentSpeed = parseFloat(val);
+            document.getElementById('speedVal').textContent = currentSpeed.toFixed(1) + 'x';
+        };
 
-        function renderMainWords(words) {
-            const grid = document.getElementById('folderWords');
-            grid.innerHTML = '';
-            words.forEach(w => {
-                const b = document.createElement('button');
-                b.className = 'w-10 h-10 bg-white border border-green-100 rounded-lg font-bold text-green-900 shadow-sm flex items-center justify-center hover:border-green-500 active:scale-90';
-                b.textContent = w;
-                b.onclick = () => window.loadHanzi(w);
-                grid.appendChild(b);
-            });
-        }
-
-        function renderSettingsFolders(folders) {
-            const list = document.getElementById('folderManageList');
-            list.innerHTML = '';
-            folders.forEach(f => {
-                const div = document.createElement('div');
-                div.className = 'bg-gray-50 p-4 rounded-2xl border';
-                div.innerHTML = `
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="font-bold">${f.name}</span>
-                        <button onclick="deleteFolder('${f.id}')" class="text-red-500 text-xs font-bold">删除</button>
-                    </div>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="addWord-${f.id}" placeholder="输入汉字..." class="border p-2 rounded-lg w-28 text-center text-sm">
-                        <button onclick="addWordToFolder('${f.id}')" class="bg-blue-500 text-white px-4 rounded-lg text-xs">添加</button>
-                    </div>
-                    <div class="flex flex-wrap gap-1">
-                        ${(f.words || []).map(w => `<span class="bg-white border text-xs px-2 py-1 rounded flex items-center gap-1">${w}<button onclick="removeWord('${f.id}', '${w}')" class="text-red-400 ml-1">✕</button></span>`).join('')}
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        // 按钮点击逻辑
-        document.getElementById('startBtn').onclick = () => {
+        window.generateCards = () => {
             const val = document.getElementById('manualInput').value.trim();
             if (!val) return;
             const chars = Array.from(val).filter(c => /\p{Unified_Ideograph}/u.test(c));
@@ -436,11 +278,6 @@
                 list.appendChild(btn);
                 if(index === 0) btn.click();
             });
-        };
-
-        document.getElementById('speedSlider').oninput = (e) => {
-            currentSpeed = parseFloat(e.target.value);
-            document.getElementById('speedVal').textContent = currentSpeed.toFixed(1) + 'x';
         };
 
         window.loadHanzi = async (char) => {
@@ -510,13 +347,151 @@
             });
         };
 
+        // --- 数据存储初始化 ---
+        async function startApp() {
+            if (isCanvas) {
+                try {
+                    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+                    const { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+                    const { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, arrayUnion, arrayRemove } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            const folderRef = collection(db, 'artifacts', appId, 'users', user.uid, 'folders');
+                            onSnapshot(folderRef, (snapshot) => {
+                                const folders = [];
+                                snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
+                                updateUI(folders);
+                            });
+                        } else {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                signInAnonymously(auth);
+                            }
+                        }
+                    });
+
+                    window.addFolder = async () => {
+                        const name = document.getElementById('newFolderName').value.trim();
+                        if (!name) return;
+                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', name), { name, words: [] });
+                        document.getElementById('newFolderName').value = '';
+                    };
+                    window.deleteFolder = async (id) => {
+                        if (confirm("确定删除吗？")) await deleteDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id));
+                    };
+                    window.addWordToFolder = async (id) => {
+                        const input = document.getElementById(`addWord-${id}`);
+                        const chars = Array.from(input.value.trim()).filter(c => /\p{Unified_Ideograph}/u.test(c));
+                        for (let char of chars) {
+                            await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id), { words: arrayUnion(char) });
+                        }
+                        input.value = '';
+                    };
+                    window.removeWord = async (id, word) => {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'folders', id), { words: arrayRemove(word) });
+                    };
+
+                } catch (e) { initLocalMode(); }
+            } else { initLocalMode(); }
+        }
+
+        function initLocalMode() {
+            document.getElementById('dbStatusSection').classList.remove('hidden');
+            const saved = localStorage.getItem('hanzi_local_db_v1');
+            if (saved) localData = JSON.parse(saved);
+
+            const save = () => {
+                localStorage.setItem('hanzi_local_db_v1', JSON.stringify(localData));
+                updateUI(localData.folders);
+            };
+
+            window.addFolder = () => {
+                const name = document.getElementById('newFolderName').value.trim();
+                if (!name) return;
+                localData.folders.push({ id: name, name, words: [] });
+                document.getElementById('newFolderName').value = '';
+                save();
+            };
+            window.deleteFolder = (id) => {
+                if (confirm("确定删除吗？")) {
+                    localData.folders = localData.folders.filter(f => f.id !== id);
+                    save();
+                }
+            };
+            window.addWordToFolder = (id) => {
+                const input = document.getElementById(`addWord-${id}`);
+                const folder = localData.folders.find(f => f.id === id);
+                const chars = Array.from(input.value.trim()).filter(c => /\p{Unified_Ideograph}/u.test(c));
+                chars.forEach(c => { if(!folder.words.includes(c)) folder.words.push(c); });
+                input.value = '';
+                save();
+            };
+            window.removeWord = (id, word) => {
+                const folder = localData.folders.find(f => f.id === id);
+                folder.words = folder.words.filter(w => w !== word);
+                save();
+            };
+            updateUI(localData.folders);
+        }
+
+        function updateUI(folders) {
+            const tabs = document.getElementById('folderTabs');
+            tabs.innerHTML = '';
+            folders.forEach(f => {
+                const b = document.createElement('button');
+                b.className = `border-2 px-4 py-1 rounded-full font-bold text-sm transition-all ${activeFolderId === f.id ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-800 border-green-100'}`;
+                b.textContent = f.name;
+                b.onclick = () => {
+                    activeFolderId = f.id;
+                    const grid = document.getElementById('folderWords');
+                    grid.innerHTML = '';
+                    (f.words || []).forEach(w => {
+                        const wb = document.createElement('button');
+                        wb.className = 'w-10 h-10 bg-white border border-green-100 rounded-lg font-bold text-green-900 shadow-sm flex items-center justify-center hover:border-green-500 active:scale-90';
+                        wb.textContent = w;
+                        wb.onclick = () => window.loadHanzi(w);
+                        grid.appendChild(wb);
+                    });
+                    updateUI(folders);
+                };
+                tabs.appendChild(b);
+            });
+
+            const list = document.getElementById('folderManageList');
+            list.innerHTML = '';
+            folders.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 p-4 rounded-2xl border';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold text-gray-800">${f.name}</span>
+                        <button onclick="window.deleteFolder('${f.id}')" class="text-red-500 text-xs font-bold bg-red-50 px-2 py-1 rounded">删除</button>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="addWord-${f.id}" placeholder="字..." class="border p-2 rounded-lg w-20 text-center text-sm">
+                        <button onclick="window.addWordToFolder('${f.id}')" class="bg-blue-500 text-white px-4 rounded-lg text-xs">添加</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        ${(f.words || []).map(w => `<span class="bg-white border text-xs px-2 py-1 rounded flex items-center gap-1">${w}<button onclick="window.removeWord('${f.id}', '${w}')" class="text-red-400">✕</button></span>`).join('')}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
         function updateStatus(msg, color) {
             const el = document.getElementById('statusText');
             el.textContent = msg;
             el.className = `font-bold text-lg ${color}`;
         }
 
-        // 启动应用
         startApp();
     </script>
 </body>
