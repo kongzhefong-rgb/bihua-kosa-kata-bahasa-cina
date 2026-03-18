@@ -4,195 +4,454 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>笔画 & 生字练习</title>
+    <!-- 引入 Hanzi Writer -->
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --primary-green: #4CAF50;
-            --soft-yellow: #FFF9C4;
+            --dark-green: #2E7D32;
             --bg-color: #F1F8E9;
+            --grid-color: #ffcccc;
         }
+
         body {
             font-family: "Microsoft YaHei", sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            overflow-x: hidden;
         }
+
+        /* 顶部绿色装饰区 */
         .header {
-            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
             color: white;
             width: 100%;
-            padding: 30px 0;
+            padding: 40px 0 70px 0;
             text-align: center;
             border-bottom-left-radius: 40px;
             border-bottom-right-radius: 40px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
         }
+
+        /* 主操作卡片 */
         .card {
             background: white;
             width: 90%;
-            max-width: 600px;
-            margin: -20px 20px 20px 20px;
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            max-width: 800px;
+            margin: -40px auto 40px auto;
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            position: relative;
+            z-index: 10;
         }
-        .input-box { display: flex; gap: 10px; margin-bottom: 25px; }
-        input {
-            flex: 1;
-            border: 3px solid #C8E6C9;
-            border-radius: 15px;
-            padding: 12px;
-            font-size: 1.1rem;
-            outline: none;
-        }
-        button#generateBtn {
-            background-color: #FF9800;
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 15px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        #charButtons {
+
+        /* 悬浮选中的字 - 初始隐藏，加载后显现 */
+        .floating-char-wrapper {
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
             justify-content: center;
+            margin-top: -75px;
             margin-bottom: 25px;
+            position: relative;
+            z-index: 20;
+            height: 90px;
         }
-        .char-item {
-            width: 60px;
-            height: 60px;
-            background-color: white;
-            border: 3px solid #FFCC80;
-            border-radius: 12px;
-            font-size: 28px;
-            font-weight: bold;
+
+        .floating-circle {
+            width: 90px;
+            height: 90px;
+            background: white;
+            border: 4px solid #FFD54F; /* 亮黄色边框 */
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #FFB74D;
+            font-size: 45px;
+            font-weight: bold;
+            color: var(--primary-green);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            opacity: 0;
+            transform: translateY(20px) scale(0.5);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .char-item.active {
+        
+        .floating-circle.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            background: var(--primary-green);
+            color: white;
+        }
+
+        /* 田字格样式 */
+        .hanzi-grid {
+            background-color: #fff;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px),
+                linear-gradient(rgba(255, 204, 204, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 204, 204, 0.5) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 50% 50%, 50% 50%;
+            border: 3px solid #cc0000;
+            position: relative;
+            touch-action: none;
+            margin: 20px auto;
+        }
+
+        /* 辅助中心虚线 */
+        .hanzi-grid::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 1px; border-top: 1px dashed var(--grid-color);
+            pointer-events: none;
+        }
+        .hanzi-grid::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0; left: 50%;
+            width: 1px; border-left: 1px dashed var(--grid-color);
+            pointer-events: none;
+        }
+
+        .char-btn {
+            transition: all 0.2s;
+        }
+        .char-btn:hover { transform: translateY(-3px); }
+        .char-btn.active {
             background-color: var(--primary-green);
             color: white;
-            border-color: #FFEB3B;
+            border-color: #FFD54F;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.4);
         }
-        .canvas-area {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            border: 4px dashed #A5D6A7;
-            border-radius: 20px;
-            padding: 20px;
-            background-color: #fff;
-        }
-        #target {
-            width: 300px;
-            height: 300px;
-            background-image: 
-                linear-gradient(to right, #eee 1px, transparent 1px),
-                linear-gradient(to bottom, #eee 1px, transparent 1px);
-            background-size: 50% 50%; /* 簡易田字格 */
-            border: 2px solid #333;
-        }
-        .msg { margin-top: 15px; font-size: 1.3rem; color: #2E7D32; font-weight: bold; }
+
+        input[type=range] { accent-color: var(--primary-green); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>笔画 & 生字练习</h1>
-        <p>听发音、看笔顺、动手写</p>
+        <h1 class="text-4xl font-bold mb-2">笔画 & 生字练习</h1>
+        <p class="opacity-90">看一看，写一写，循序渐进</p>
+        
+        <button onclick="openSettings()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full transition-all text-white text-sm">
+            ⚙️ 设置
+        </button>
     </div>
 
     <div class="card">
-        <div class="input-box">
-            <input type="text" id="charInput" placeholder="请输入想要练习的简态字...">
-            <button id="generateBtn">生成字卡</button>
+        <!-- 文本输入框 -->
+        <div class="flex gap-3 mb-12">
+            <input type="text" id="manualInput" placeholder="输入生字或词语..." 
+                class="flex-1 px-5 py-3 border-2 border-green-100 rounded-2xl outline-none focus:border-green-500 text-xl font-bold transition-all shadow-inner">
+            <button id="startBtn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 rounded-2xl shadow-md active:scale-95 transition-all">
+                生成字卡
+            </button>
         </div>
-        <div id="charButtons"></div>
-        <div class="canvas-area" id="canvasArea">
-            <div id="target"></div>
-            <div class="msg" id="msg">准备开始</div>
+
+        <!-- 悬浮圆圈字卡 -->
+        <div class="floating-char-wrapper">
+            <div id="floatChar" class="floating-circle">?</div>
+        </div>
+
+        <!-- 生成出的待选字卡 -->
+        <div id="selectionArea" class="flex flex-wrap gap-2 justify-center mb-10 min-h-[50px]">
+            <!-- 动态生成按钮 -->
+        </div>
+
+        <!-- 底部的文件夹分类 -->
+        <div class="space-y-4 mb-8 border-t border-dashed border-gray-100 pt-6">
+            <div id="folderTabs" class="flex flex-wrap gap-2 justify-center"></div>
+            <div id="folderWords" class="flex flex-wrap gap-2 justify-center min-h-[40px]"></div>
+        </div>
+
+        <!-- 核心练习/演示区域 -->
+        <div id="practiceSection" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div id="target" class="hanzi-grid w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-2xl shadow-xl"></div>
+            
+            <div class="text-center mt-8 space-y-6">
+                <div class="inline-flex items-center gap-4 bg-green-50 px-8 py-3 rounded-full border border-green-100 shadow-sm">
+                    <span id="statusText" class="text-green-800 font-bold text-lg">准备就绪</span>
+                    <span class="text-gray-200">|</span>
+                    <span id="strokeText" class="text-red-600 font-black text-xl">---</span>
+                </div>
+
+                <div class="flex justify-center gap-6">
+                    <button onclick="replayAnimation()" class="bg-blue-500 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-blue-600 active:scale-95 transition-all flex items-center gap-2">
+                        <span>👁️</span> 重看演示
+                    </button>
+                    <button onclick="startQuiz()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:bg-green-700 active:scale-95 transition-all flex items-center gap-2">
+                        <span>✍️</span> 重新练习
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        let writer;
-        // 筆畫代碼對應名稱 (Hanzi Writer 數據格式)
-        const strokeNames = {
-            'h': '横', 's': '竖', 'p': '撇', 'n': '捺', 'd': '点', 't': '提',
-            'hz': '横折', 'sz': '竖折', 'hg': '横钩', 'sg': '竖钩', 'swg': '竖弯钩'
+    <!-- 后台设置弹窗 -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div class="bg-green-800 p-6 text-white flex justify-between items-center">
+                <h2 class="text-xl font-bold">⚙️ 管理后台</h2>
+                <button onclick="closeSettings()" class="text-3xl">✕</button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto no-scrollbar space-y-8 flex-1">
+                <section>
+                    <div class="flex justify-between items-center mb-4">
+                        <label class="font-bold text-gray-700">演示速度 (已调快至 0.6x)：</label>
+                        <span id="speedVal" class="bg-green-100 text-green-700 px-4 py-1 rounded-full font-bold">0.6x</span>
+                    </div>
+                    <input type="range" id="speedSlider" min="0.1" max="1.5" step="0.1" value="0.6" class="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </section>
+
+                <section class="border-t pt-6 space-y-4">
+                    <h3 class="font-bold text-gray-800">📁 词库管理</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="newFolderName" placeholder="新文件夹..." class="flex-1 border p-3 rounded-xl outline-none focus:border-green-500">
+                        <button onclick="addFolder()" class="bg-green-600 text-white px-6 rounded-xl font-bold">新建</button>
+                    </div>
+                    <div id="folderManageList" class="space-y-4"></div>
+                </section>
+            </div>
+            
+            <div class="p-6 border-t bg-gray-50 flex justify-end">
+                <button onclick="closeSettings()" class="bg-gray-800 text-white px-10 py-3 rounded-2xl font-bold">保存并完成</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hanzi-step-by-step';
+
+        let currentUser = null;
+        let writer = null;
+        let currentChar = '';
+        let currentSpeed = 0.6; // 调快了初始默认速度
+        let activeFolderId = null;
+        let animToken = 0;
+
+        window.openSettings = () => {
+            if (prompt("请输入管理员密码：") === "0925") {
+                document.getElementById('settingsModal').classList.remove('hidden');
+                document.getElementById('settingsModal').classList.add('flex');
+            } else { alert("密码错误！"); }
+        };
+        window.closeSettings = () => {
+            document.getElementById('settingsModal').classList.add('hidden');
+            document.getElementById('settingsModal').classList.remove('flex');
         };
 
-        document.getElementById('generateBtn').addEventListener('click', function() {
-            const val = document.getElementById('charInput').value;
-            const container = document.getElementById('charButtons');
-            container.innerHTML = '';
-            document.getElementById('canvasArea').style.display = 'none';
-            
-            Array.from(val).forEach(char => {
-                if(char.trim()==='') return;
-                const btn = document.createElement('div');
-                btn.className = 'char-item';
-                btn.textContent = char;
-                btn.onclick = () => runFlow(char, btn);
-                container.appendChild(btn);
-            });
+        // Firebase 监听
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                const folderRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'folders');
+                onSnapshot(folderRef, (snapshot) => {
+                    const folders = [];
+                    snapshot.forEach(doc => folders.push({ id: doc.id, ...doc.data() }));
+                    renderMainFolders(folders);
+                    renderSettingsFolders(folders);
+                });
+            } else { signInAnonymously(auth); }
         });
 
-        async function runFlow(char, el) {
-            document.querySelectorAll('.char-item').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            document.getElementById('canvasArea').style.display = 'flex';
-            document.getElementById('target').innerHTML = '';
-            const msg = document.getElementById('msg');
-
-            writer = HanziWriter.create('target', char, {
-                width: 300, height: 300, padding: 10,
-                showOutline: true, strokeColor: '#2E7D32', drawingColor: '#D32F2F', drawingWidth: 12
-            });
-
-            // 1. 讀生字
-            msg.textContent = `🔊 读音：${char}`;
-            await speak(char);
-
-            // 2. 播放動畫 + 讀筆畫名
-            msg.textContent = `👀 观察笔画...`;
-            const data = await HanziWriter.loadCharacterData(char);
-            for (let i = 0; i < data.strokes.length; i++) {
-                // 這裡我們抓取該筆劃的初步特徵來對應名稱
-                // 註：精確辨識所有複合筆劃需較深邏輯，這裡示範讀出基本筆劃
-                await speak("第" + (i+1) + "笔"); 
-                await new Promise(r => writer.animateStroke(i, { onComplete: r }));
-            }
-
-            // 3. 直接開始練習
-            msg.textContent = `✍️ 请你写一遍`;
-            writer.quiz({
-                onCorrectStroke: (s) => {
-                    speak("对！第" + (s.strokeNum + 1) + "笔");
-                },
-                onComplete: () => {
-                    msg.textContent = "🌟 太棒了！写完了！";
-                    speak("太棒了，你学会了" + char);
-                }
+        function renderMainFolders(folders) {
+            const tabs = document.getElementById('folderTabs');
+            tabs.innerHTML = '';
+            folders.forEach(f => {
+                const b = document.createElement('button');
+                b.className = `border-2 px-4 py-1 rounded-full font-bold text-sm transition-all ${activeFolderId === f.id ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-800 border-green-100'}`;
+                b.textContent = f.name;
+                b.onclick = () => {
+                    activeFolderId = f.id;
+                    renderMainWords(f.words || []);
+                    renderMainFolders(folders);
+                };
+                tabs.appendChild(b);
             });
         }
 
-        function speak(text) {
-            return new Promise(resolve => {
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'zh-CN';
-                u.rate = 0.9;
-                u.onend = resolve;
-                window.speechSynthesis.speak(u);
+        function renderMainWords(words) {
+            const grid = document.getElementById('folderWords');
+            grid.innerHTML = '';
+            words.forEach(w => {
+                const b = document.createElement('button');
+                b.className = 'w-10 h-10 bg-white border border-green-100 rounded-lg font-bold text-green-900 shadow-sm flex items-center justify-center hover:border-green-500 active:scale-90';
+                b.textContent = w;
+                b.onclick = () => loadHanzi(w);
+                grid.appendChild(b);
             });
+        }
+
+        // 管理逻辑
+        window.addFolder = async () => {
+            const name = document.getElementById('newFolderName').value.trim();
+            if (!name) return;
+            await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', name), { name, words: [] });
+            document.getElementById('newFolderName').value = '';
+        };
+
+        window.deleteFolder = async (id) => {
+            if (confirm("确定删除吗？")) await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', id));
+        };
+
+        window.addWordToFolder = async (id) => {
+            const input = document.getElementById(`addWord-${id}`);
+            const text = input.value.trim();
+            if (!text) return;
+            const chars = Array.from(text).filter(c => /\p{Unified_Ideograph}/u.test(c));
+            for (let char of chars) {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', id), { words: arrayUnion(char) });
+            }
+            input.value = '';
+        };
+
+        window.removeWord = async (id, word) => {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'folders', id), { words: arrayRemove(word) });
+        };
+
+        function renderSettingsFolders(folders) {
+            const list = document.getElementById('folderManageList');
+            list.innerHTML = '';
+            folders.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 p-4 rounded-2xl border';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="font-bold">${f.name}</span>
+                        <button onclick="deleteFolder('${f.id}')" class="text-red-500 text-xs font-bold">删除</button>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="addWord-${f.id}" placeholder="输入汉字..." class="border p-2 rounded-lg w-28 text-center text-sm">
+                        <button onclick="addWordToFolder('${f.id}')" class="bg-blue-500 text-white px-4 rounded-lg text-xs">添加</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1">
+                        ${(f.words || []).map(w => `<span class="bg-white border text-xs px-2 py-1 rounded flex items-center gap-1">${w}<button onclick="removeWord('${f.id}', '${w}')" class="text-red-400 ml-1">✕</button></span>`).join('')}
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // 业务流程
+        document.getElementById('startBtn').onclick = () => {
+            const val = document.getElementById('manualInput').value.trim();
+            if (!val) return;
+            const chars = Array.from(val).filter(c => /\p{Unified_Ideograph}/u.test(c));
+            const list = document.getElementById('selectionArea');
+            list.innerHTML = '';
+            
+            chars.forEach((char, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'char-btn w-14 h-14 bg-white border-2 border-green-100 rounded-2xl font-black text-2xl text-green-900 shadow-sm flex items-center justify-center';
+                btn.textContent = char;
+                btn.onclick = () => {
+                    document.querySelectorAll('.char-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadHanzi(char);
+                };
+                list.appendChild(btn);
+                if(index === 0) btn.click();
+            });
+        };
+
+        document.getElementById('speedSlider').oninput = (e) => {
+            currentSpeed = parseFloat(e.target.value);
+            document.getElementById('speedVal').textContent = currentSpeed.toFixed(1) + 'x';
+        };
+
+        window.loadHanzi = async (char) => {
+            currentChar = char;
+            
+            const float = document.getElementById('floatChar');
+            float.textContent = char;
+            float.classList.remove('visible');
+            void float.offsetWidth;
+            float.classList.add('visible');
+            
+            document.getElementById('practiceSection').classList.remove('hidden');
+            document.getElementById('target').innerHTML = '';
+            
+            // 关键：showCharacter 设为 false，防止一开始就全变色
+            writer = HanziWriter.create('target', char, {
+                width: document.getElementById('target').offsetWidth,
+                height: document.getElementById('target').offsetWidth,
+                padding: 30,
+                showOutline: true,        // 显示灰色底图
+                showCharacter: false,      // 关键：不直接显示全色的字
+                outlineColor: '#EEEEEE',   // 底图颜色
+                strokeColor: '#2E7D32',    // 演示笔画颜色
+                drawingColor: '#2E7D32',   // 写对后的颜色
+                drawingWidth: 15,
+                strokeAnimationSpeed: currentSpeed,
+                delayBetweenStrokes: 1000 / currentSpeed
+            });
+
+            await replayAnimation();
+            startQuiz();
+        };
+
+        window.replayAnimation = async () => {
+            if (!writer) return;
+            writer.cancelQuiz();
+            animToken++;
+            const myToken = animToken;
+            
+            updateStatus("👀 正在演示笔顺...", "text-blue-600");
+            document.getElementById('strokeText').textContent = "观察中";
+            
+            // 使用 animateCharacter，它会自动逐笔绘制并保留在屏幕上
+            await writer.animateCharacter({
+                onComplete: () => {
+                    if (myToken === animToken) {
+                        updateStatus("✨ 请起笔书写练习", "text-green-600");
+                        document.getElementById('strokeText').textContent = "开始";
+                    }
+                }
+            });
+        };
+
+        window.startQuiz = () => {
+            if (!writer) return;
+            writer.cancelQuiz();
+            animToken++;
+            
+            // 练习开始前先隐藏演示的笔画，只留底图
+            writer.hideCharacter();
+            
+            updateStatus("✍️ 请按底图顺序书写", "text-orange-600");
+            document.getElementById('strokeText').textContent = "请书写";
+            
+            writer.quiz({
+                onCorrectStroke: () => {
+                    updateStatus("✅ 正确！接着写...", "text-green-600");
+                },
+                onMistake: () => {
+                    updateStatus("❌ 笔顺不对，再试一次", "text-red-500");
+                },
+                onComplete: () => {
+                    updateStatus("🌟 太棒了！写完了！", "text-blue-700");
+                    document.getElementById('strokeText').textContent = "完成";
+                }
+            });
+        };
+
+        function updateStatus(msg, color) {
+            const el = document.getElementById('statusText');
+            el.textContent = msg;
+            el.className = `font-bold text-lg ${color}`;
         }
     </script>
 </body>
