@@ -26,13 +26,15 @@
             flex-direction: column;
         }
 
+        /* 优化后的顶部布局：第一排标题，第二排署名 */
         .header {
             background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
             color: white;
-            padding: 10px 15px;
+            padding: 12px 15px 12px 15px;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             z-index: 50;
             flex-shrink: 0;
             position: relative;
@@ -135,7 +137,7 @@
             color: var(--dark-green);
         }
 
-        /* 选字小卡片 */
+        /* 选字卡片样式 */
         .char-box {
             width: 48px;
             height: 48px;
@@ -148,13 +150,16 @@
             justify-content: center;
             background: #fff;
             cursor: pointer;
+            transition: all 0.1s;
         }
         .char-box.active {
             border-color: #E65100;
             background: #FFF3E0;
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(230, 81, 0, 0.2);
         }
 
-        /* 顶部逐字卡片容器 */
+        /* 顶部逐字卡片展示容器 */
         .active-word-container {
             display: none;
             flex-wrap: wrap;
@@ -192,24 +197,19 @@
             z-index: 100;
         }
         .restore-btn:hover { color: var(--primary-green); background: rgba(0,0,0,0.1); }
-
-        /* 底部署名样式 */
-        .footer {
-            text-align: center;
-            padding: 6px 0;
-            font-size: 10px;
-            color: #999;
-            background: white;
-            border-top: 1px solid #f0f0f0;
-            flex-shrink: 0;
-        }
     </style>
 </head>
 <body id="appBody">
 
     <div class="header">
-        <h1 class="text-base font-bold">笔画&生字练习</h1>
-        <button onclick="openSettings()" class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">⚙️ 设置</button>
+        <div class="relative w-full flex items-center justify-center mb-1">
+            <h1 class="text-base font-bold tracking-tight">笔画&生字练习</h1>
+            <button onclick="openSettings()" class="absolute right-0 bg-white/20 px-3 py-1 rounded-full text-[11px] font-bold shadow-sm hover:bg-white/30 transition-all">
+                ⚙️ 设置
+            </button>
+        </div>
+        <!-- zfkong · 趣学 放在第二排 -->
+        <div class="text-[10px] font-medium opacity-80 tracking-widest">zfkong · 趣学</div>
     </div>
 
     <div class="app-body">
@@ -229,9 +229,9 @@
             <!-- 非书写模式：输入与词库 -->
             <div class="p-3 space-y-4 hide-on-write">
                 <div class="flex gap-2">
-                    <input type="text" id="manualInput" placeholder="手动输入生字或词组练习..." 
+                    <input type="text" id="manualInput" placeholder="手动输入你想练习的生字..." 
                         class="flex-1 px-3 py-2 border rounded-xl text-sm outline-none focus:border-green-400 shadow-sm">
-                    <button onclick="handleManual()" class="bg-orange-500 text-white text-sm px-5 rounded-xl font-bold shadow-sm">开始</button>
+                    <button onclick="handleManual()" class="bg-orange-500 text-white text-sm px-5 rounded-xl font-bold shadow-sm active:scale-95">开始</button>
                 </div>
 
                 <div id="wordUnitContainer" class="flex flex-wrap gap-2"></div>
@@ -264,12 +264,7 @@
         </div>
     </div>
 
-    <!-- 底部署名 -->
-    <div class="footer">
-        zfkong · 趣学
-    </div>
-
-    <!-- 系统设置 -->
+    <!-- 系统设置弹窗 -->
     <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col">
             <div class="bg-gray-800 p-4 text-white flex justify-between items-center rounded-t-3xl">
@@ -308,14 +303,23 @@
                 { id: "f4", name: "名字", words: ["江梓宸", "江梓昕"] },
                 { id: "f1", name: "1", words: ["幼儿园", "老师", "同学", "学习角落", "课室", "电脑室", "办公室", "游乐场", "厕所", "礼堂", "园长", "校车司机", "园工"] },
                 { id: "f2", name: "2", words: ["我", "他", "他们", "大家", "朋友", "打招呼", "牵手", "轮流等待", "互相拥抱", "分享玩具", "玩耍", "玩具", "玩伴"] },
-                { id: "f3", name: "3a", words: ["爷爷", "奶奶", "爸爸", "妈妈", "哥哥", "姐姐", "弟弟", "妹妹", "种花", "浇花", "看报纸", "洗碗", "洗车", "煮菜", "插花", "洗杯", "看书", "吃饭"] }
-                { id: "f4", name: "3b", words: ["客厅", "厨房", "饭厅", "卧室", "浴室", "电视机", "电灯", "电话", "沙发", "碗", "锅", "杯", "冰箱", "餐桌", "餐椅", "枕头", "被单", "床", "肥皂", "牙刷", "毛巾", "手机" "相机"] }
+                { id: "f3", name: "3a", words: ["爷爷", "奶奶", "爸爸", "妈妈", "哥哥", "姐姐", "弟弟", "妹妹", "种花", "浇花", "看报纸", "洗碗", "洗车", "煮菜", "插花", "洗杯", "看书", "吃饭"] },
+                { id: "f5", name: "3b", words: ["客厅", "厨房", "饭厅", "卧室", "浴室", "电视机", "电灯", "电话", "沙发", "碗", "锅", "杯", "冰箱", "餐桌", "餐椅", "枕头", "被单", "床", "肥皂", "牙刷", "毛巾", "手机", "相机"] },
+                { id: "f6", name: "4", words: ["书包", "书本", "文具盒", "颜色笔", "橡皮", "尺", "剪刀", "铅笔", "削刀笔", "纸", "毛笔"] }
             ]
         };
 
         window.onload = () => {
-            const saved = localStorage.getItem('hanzi_mobile_final');
-            if (saved) appData = JSON.parse(saved);
+            const saved = localStorage.getItem('hanzi_mobile_final_v3');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // 确保默认词库包含新加的文件夹
+                if (parsed.folders.length < appData.folders.length) {
+                    localStorage.setItem('hanzi_mobile_final_v3', JSON.stringify(appData));
+                } else {
+                    appData = parsed;
+                }
+            }
             renderSidebar();
         };
 
@@ -409,7 +413,8 @@
                         const item = document.createElement('div');
                         item.className = 'char-box shadow-sm top-char-card';
                         item.textContent = char;
-                        item.onclick = () => {
+                        item.onclick = (e) => {
+                            e.stopPropagation();
                             updateActiveCharInUI(char);
                             speak(char);
                             initWriter(char);
@@ -506,7 +511,7 @@
         }
 
         window.openSettings = () => {
-            if(prompt("密码:") === "0925") {
+            if(prompt("请输入密码:") === "0925") {
                 document.getElementById('settingsModal').classList.remove('hidden');
                 document.getElementById('settingsModal').classList.add('flex');
                 renderManageList();
@@ -515,7 +520,7 @@
 
         window.closeSettings = () => {
             document.getElementById('settingsModal').classList.add('hidden');
-            localStorage.setItem('hanzi_mobile_final', JSON.stringify(appData));
+            localStorage.setItem('hanzi_mobile_final_v3', JSON.stringify(appData));
             renderSidebar();
         };
 
@@ -531,7 +536,7 @@
                         <button onclick="deleteFolder('${f.id}')" class="text-red-500">删除</button>
                     </div>
                     <div class="flex gap-1 mb-1">
-                        <input type="text" id="addW-${f.id}" placeholder="词词" class="border p-1 rounded flex-1 text-[10px]">
+                        <input type="text" id="addW-${f.id}" placeholder="添加字词" class="border p-1 rounded flex-1 text-[10px]">
                         <button onclick="addWordToFolder('${f.id}')" class="bg-blue-500 text-white px-2 rounded">加</button>
                     </div>
                     <div class="text-gray-400 truncate">${f.words.join(', ')}</div>
